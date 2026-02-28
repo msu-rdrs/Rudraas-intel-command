@@ -214,7 +214,7 @@ export class EventHandlerManager implements AppModule {
           if (variant && variant !== SITE_VARIANT) {
             e.preventDefault();
             trackVariantSwitch(SITE_VARIANT, variant);
-            localStorage.setItem('worldmonitor-variant', variant);
+            localStorage.setItem('rudraas-variant', variant);
             window.location.reload();
           }
         });

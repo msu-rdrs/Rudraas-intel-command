@@ -5,53 +5,54 @@
    Theme Colors — overridden by [data-theme="light"] below
    ============================================================ */
 :root {
-  /* Backgrounds */
-  --bg: #0a0a0a;
-  --bg-secondary: #111;
-  --surface: #141414;
-  --surface-hover: #1e1e1e;
-  --surface-active: #1a1a2e;
+  /* Backgrounds — deep black */
+  --bg: #050505;
+  --bg-secondary: #080b12;
+  --surface: #0d0d0b;
+  --surface-hover: #10141e;
+  --surface-active: #0e1428;
 
-  /* Borders */
-  --border: #2a2a2a;
-  --border-strong: #444;
-  --border-subtle: #1a1a1a;
+  /* Borders — dark navy */
+  --border: #151a2e;
+  --border-strong: #1e2a45;
+  --border-subtle: #0d1020;
 
-  /* Text */
-  --text: #e8e8e8;
-  --text-secondary: #ccc;
-  --text-dim: #888;
-  --text-muted: #666;
-  --text-faint: #555;
-  --text-ghost: #444;
-  --accent: #fff;
+  /* Text — cool silver-white */
+  --text: #d0d4e0;
+  --text-secondary: #9099b0;
+  --text-dim: #606878;
+  --text-muted: #404860;
+  --text-faint: #2a3040;
+  --text-ghost: #1e2030;
+  --accent: #1B2E5E;
+  --accent-secondary: #C0C0C0;
 
   /* Overlays & shadows */
-  --overlay-subtle: rgba(255, 255, 255, 0.03);
-  --overlay-light: rgba(255, 255, 255, 0.05);
-  --overlay-medium: rgba(255, 255, 255, 0.1);
-  --overlay-heavy: rgba(255, 255, 255, 0.2);
-  --shadow-color: rgba(0, 0, 0, 0.5);
-  --darken-light: rgba(0, 0, 0, 0.15);
-  --darken-medium: rgba(0, 0, 0, 0.2);
-  --darken-heavy: rgba(0, 0, 0, 0.3);
+  --overlay-subtle: rgba(74, 144, 217, 0.03);
+  --overlay-light: rgba(74, 144, 217, 0.05);
+  --overlay-medium: rgba(74, 144, 217, 0.1);
+  --overlay-heavy: rgba(74, 144, 217, 0.2);
+  --shadow-color: rgba(0, 0, 0, 0.7);
+  --darken-light: rgba(0, 0, 0, 0.2);
+  --darken-medium: rgba(0, 0, 0, 0.3);
+  --darken-heavy: rgba(0, 0, 0, 0.5);
 
   /* Scrollbar */
-  --scrollbar-thumb: #333;
-  --scrollbar-thumb-hover: #555;
+  --scrollbar-thumb: #1a2035;
+  --scrollbar-thumb-hover: #243050;
 
   /* Input */
-  --input-bg: #1a1a1a;
+  --input-bg: #0a0d14;
 
   /* Panels */
-  --panel-bg: #141414;
-  --panel-border: #2a2a2a;
+  --panel-bg: #0d0d0b;
+  --panel-border: #151a2e;
 
-  /* Map */
-  --map-bg: #020a08;
-  --map-grid: #0a2a20;
-  --map-country: #0a2018;
-  --map-stroke: #0f5040;
+  /* Map — dark terrain / night ops */
+  --map-bg: #020300;
+  --map-grid: #0a1020;
+  --map-country: #080e1a;
+  --map-stroke: #1a2a45;
 
   /* Font stack */
   --font-mono: 'SF Mono', 'Monaco', 'Cascadia Code', 'Fira Code', 'DejaVu Sans Mono', 'Liberation Mono', monospace;
@@ -71,38 +72,38 @@
    Semantic Colors — dark-mode defaults, light overrides below
    ============================================================ */
 :root {
-  /* Severity levels */
-  --semantic-critical: #ff4444;
-  --semantic-high: #ff8800;
-  --semantic-elevated: #ffaa00;
-  --semantic-normal: #44aa44;
-  --semantic-low: #3388ff;
-  --semantic-info: #3b82f6;
-  --semantic-positive: #44ff88;
+  /* Severity levels — red critical, blue high, silver normal */
+  --semantic-critical: #ef4444;
+  --semantic-high: #4A90D9;
+  --semantic-elevated: #4A90D9;
+  --semantic-normal: #C0C0C0;
+  --semantic-low: #8090A8;
+  --semantic-info: #4A90D9;
+  --semantic-positive: #C0C0C0;
 
   /* Threat levels */
   --threat-critical: #ef4444;
-  --threat-high: #f97316;
-  --threat-medium: #eab308;
-  --threat-low: #22c55e;
-  --threat-info: #3b82f6;
+  --threat-high: #4A90D9;
+  --threat-medium: #4A90D9;
+  --threat-low: #C0C0C0;
+  --threat-info: #4A90D9;
 
   /* DEFCON levels */
-  --defcon-1: #ff0040;
-  --defcon-2: #ff4400;
-  --defcon-3: #ffaa00;
-  --defcon-4: #00aaff;
-  --defcon-5: #2d8a6e;
+  --defcon-1: #ef4444;
+  --defcon-2: #f97316;
+  --defcon-3: #4A90D9;
+  --defcon-4: #C0C0C0;
+  --defcon-5: #1B2E5E;
 
   /* Status indicators */
-  --status-live: #44ff88;
-  --status-cached: #ffaa00;
-  --status-unavailable: #ff4444;
+  --status-live: #4A90D9;
+  --status-cached: #C0C0C0;
+  --status-unavailable: #ef4444;
 
   /* Legacy color aliases (used by existing var() references) */
-  --red: #ff4444;
-  --green: #44ff88;
-  --yellow: #ffaa00;
+  --red: #ef4444;
+  --green: #C0C0C0;
+  --yellow: #4A90D9;
 }
 
 /* ============================================================
@@ -365,11 +366,36 @@ canvas,
   opacity: 1;
 }
 
+.logo-img-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.logo-emblem {
+  height: 38px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 0 6px rgba(192, 192, 192, 0.3));
+  flex-shrink: 0;
+}
+
+.logo-wordmark {
+  height: 52px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 0 4px rgba(192, 192, 192, 0.2));
+  flex-shrink: 0;
+}
+
+/* Fallback — keep .logo in case it's referenced elsewhere */
 .logo {
   font-weight: bold;
   font-size: 14px;
-  letter-spacing: 2px;
-  color: var(--accent);
+  letter-spacing: 3px;
+  color: #C0C0C0;
+  text-shadow: 0 0 8px rgba(192, 192, 192, 0.4);
 }
 
 .version {
@@ -391,10 +417,10 @@ canvas,
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: linear-gradient(135deg, #1a2332 0%, #0f1923 100%);
-  border: 1px solid rgba(68, 255, 136, 0.25);
+  background: linear-gradient(135deg, #0e1428 0%, #080e1a 100%);
+  border: 1px solid rgba(74, 144, 217, 0.25);
   border-radius: 10px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(68, 255, 136, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(74, 144, 217, 0.08);
   z-index: 10003;
   opacity: 0;
   transform: translateY(-20px);
@@ -417,8 +443,8 @@ canvas,
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: rgba(68, 255, 136, 0.12);
-  color: var(--green);
+  background: rgba(74, 144, 217, 0.12);
+  color: #4A90D9;
 }
 
 .update-toast-body {
@@ -491,28 +517,42 @@ canvas,
   align-items: center;
   margin-left: 6px;
   padding: 1px 7px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: #0a0a0a;
-  background: #f59e0b;
-  border-radius: 8px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #050505;
+  background: #4A90D9;
+  border-radius: 2px;
   vertical-align: middle;
+  text-transform: uppercase;
+}
+
+/* RESTRICTED badge always visible (not just in beta mode) */
+.beta-badge.always-show {
+  display: inline-flex;
+  background: #0a1428;
+  color: #C0C0C0;
+  border: 1px solid #C0C0C0;
 }
 
 .credit-link {
   font-size: 9px;
-  color: var(--muted);
-  opacity: 0.6;
-  font-weight: normal;
-  letter-spacing: 0.5px;
+  color: #C0C0C0;
+  opacity: 0.7;
+  font-weight: 600;
+  letter-spacing: 1.5px;
   text-decoration: none;
   transition: opacity 0.2s;
+  text-transform: uppercase;
 }
 
 .credit-link:hover {
   opacity: 1;
-  color: var(--accent);
+}
+
+.rudraas-brand {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* Hide X logo on desktop, show text */

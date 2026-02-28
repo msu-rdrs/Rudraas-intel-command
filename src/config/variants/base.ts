@@ -31,11 +31,11 @@ export const MONITOR_COLORS = [
 
 // Storage keys - shared
 export const STORAGE_KEYS = {
-  panels: 'worldmonitor-panels',
-  monitors: 'worldmonitor-monitors',
-  mapLayers: 'worldmonitor-layers',
-  disabledFeeds: 'worldmonitor-disabled-feeds',
-  liveChannels: 'worldmonitor-live-channels',
+  panels: 'rudraas-panels',
+  monitors: 'rudraas-monitors',
+  mapLayers: 'rudraas-layers',
+  disabledFeeds: 'rudraas-disabled-feeds',
+  liveChannels: 'rudraas-live-channels',
 } as const;
 
 // Type definitions for variant configs

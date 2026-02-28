@@ -13,7 +13,7 @@ export interface PanelOptions {
   infoTooltip?: string;
 }
 
-const PANEL_SPANS_KEY = 'worldmonitor-panel-spans';
+const PANEL_SPANS_KEY = 'rudraas-panel-spans';
 
 function loadPanelSpans(): Record<string, number> {
   try {
@@ -30,7 +30,7 @@ function savePanelSpan(panelId: string, span: number): void {
   localStorage.setItem(PANEL_SPANS_KEY, JSON.stringify(spans));
 }
 
-const PANEL_COL_SPANS_KEY = 'worldmonitor-panel-col-spans';
+const PANEL_COL_SPANS_KEY = 'rudraas-panel-col-spans';
 const ROW_RESIZE_STEP_PX = 80;
 const COL_RESIZE_STEP_PX = 80;
 const PANELS_GRID_MIN_TRACK_PX = 280;

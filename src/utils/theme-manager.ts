@@ -2,7 +2,7 @@ import { invalidateColorCache } from './theme-colors';
 
 export type Theme = 'dark' | 'light';
 
-const STORAGE_KEY = 'worldmonitor-theme';
+const STORAGE_KEY = 'rudraas-theme';
 const DEFAULT_THEME: Theme = 'dark';
 
 /**
@@ -43,7 +43,7 @@ export function setTheme(theme: Theme): void {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (meta) {
     const variant = document.documentElement.dataset.variant;
-    meta.content = theme === 'dark' ? (variant === 'happy' ? '#1A2332' : '#0a0f0a') : (variant === 'happy' ? '#FAFAF5' : '#f8f9fa');
+    meta.content = theme === 'dark' ? (variant === 'happy' ? '#1A2332' : '#050505') : (variant === 'happy' ? '#FAFAF5' : '#f8f9fa');
   }
   window.dispatchEvent(new CustomEvent('theme-changed', { detail: { theme } }));
 }
@@ -77,7 +77,7 @@ export function applyStoredTheme(): void {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   if (meta) {
     if (effective === 'dark') {
-      meta.content = variant === 'happy' ? '#1A2332' : '#0a0f0a';
+      meta.content = variant === 'happy' ? '#1A2332' : '#050505';
     } else {
       meta.content = variant === 'happy' ? '#FAFAF5' : '#f8f9fa';
     }

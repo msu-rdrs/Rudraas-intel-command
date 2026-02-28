@@ -1,4 +1,4 @@
-// Dynamic Meta Tags Service for World Monitor
+// Dynamic Meta Tags Service for RUDRAAS Intelligence Command
 // Updates OG tags and Twitter Cards for shared stories
 
 interface StoryMeta {
@@ -10,14 +10,14 @@ interface StoryMeta {
   type: 'ciianalysis' | 'crisisalert' | 'dailybrief' | 'marketfocus';
 }
 
-const BASE_URL = 'https://worldmonitor.app';
-const DEFAULT_IMAGE = 'https://worldmonitor.app/favico/og-image.png';
+const BASE_URL = '';
+const DEFAULT_IMAGE = '/favico/og-image.png';
 
 export function updateMetaTagsForStory(meta: StoryMeta): void {
   const { countryCode, countryName, ciiScore, ciiLevel, trend, type } = meta;
   
   // Generate dynamic content
-  const title = `${countryName} Intelligence Brief | World Monitor`;
+  const title = `${countryName} Intelligence Brief | RUDRAAS Intelligence Command`;
   const description = generateDescription(ciiScore, ciiLevel, trend, type, countryName);
   const storyUrl = `${BASE_URL}/api/story?c=${countryCode}&t=${type}`;
   let imageUrl = `${BASE_URL}/api/og-story?c=${countryCode}&t=${type}`;
@@ -47,8 +47,8 @@ export function updateMetaTagsForStory(meta: StoryMeta): void {
 }
 
 export function resetMetaTags(): void {
-  const defaultTitle = 'World Monitor - Global Situation with AI Insights';
-  const defaultDesc = 'AI-powered real-time global intelligence dashboard with live news, markets, military tracking, and geopolitical data.';
+  const defaultTitle = 'RUDRAAS Intelligence Command - Real-Time Defense & Geopolitical Dashboard';
+  const defaultDesc = 'AI-powered real-time defense intelligence platform with live news, markets, military tracking, and geopolitical data. Built for RUDRAAS Dynamics.';
   
   setMetaTag('title', defaultTitle);
   setMetaTag('description', defaultDesc);
@@ -94,7 +94,7 @@ function generateDescription(
     parts.push(typeDescriptions[type]);
   }
   
-  return `World Monitor ${parts.join('. ')}. Free, open-source geopolitical intelligence.`;
+  return `RUDRAAS Intelligence Command — ${parts.join('. ')}. Defense intelligence by RUDRAAS Dynamics.`;
 }
 
 function setMetaTag(property: string, content: string): void {

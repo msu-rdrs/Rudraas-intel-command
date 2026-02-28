@@ -4,7 +4,7 @@ export const SITE_VARIANT: string = (() => {
   // Only fall back to localStorage when env is 'full' (allows desktop app variant switching).
   if (env !== 'full') return env;
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('worldmonitor-variant');
+    const stored = localStorage.getItem('rudraas-variant');
     if (stored === 'tech' || stored === 'full' || stored === 'finance' || stored === 'happy') return stored;
   }
   return env;
