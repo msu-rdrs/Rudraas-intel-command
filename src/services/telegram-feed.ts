@@ -1,51 +1,49 @@
-import { proxyUrl } from '@/utils';
-import { isDesktopRuntime } from '@/services/runtime';
-
 export interface TelegramFeedMessage {
   text: string;
   date: string;  // ISO 8601
   link: string;  // message permalink on t.me
 }
 
-export interface TelegramFeedResult {
-  channel: string;
-  messages: TelegramFeedMessage[];
-  fetchedAt: number;
-}
-
 // Per-channel cache (TTL: 60 s)
-const cache = new Map<string, TelegramFeedResult>();
+const cache = new Map<string, { messages: TelegramFeedMessage[]; fetchedAt: number }>();
 const CACHE_TTL = 60_000;
 
-function proxyEndpoint(channel: string): string {
-  const path = `/api/telegram-proxy?channel=${encodeURIComponent(channel)}`;
-  return isDesktopRuntime() ? proxyUrl(path) : path;
-}
-
-export async function fetchChannelMessages(
-  channel: string
-): Promise<TelegramFeedResult> {
+export async function fetchChannelMessages(channel: string): Promise<TelegramFeedMessage[]> {
   const cached = cache.get(channel);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) return cached;
-
-  const res = await fetch(proxyEndpoint(channel), {
-    headers: { Accept: 'application/json' },
-  });
-
-  if (!res.ok) {
-    throw new Error(`telegram-proxy ${res.status} for ${channel}`);
+  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
+    console.log('[Signals] cache hit for', channel, '—', cached.messages.length, 'messages');
+    return cached.messages;
   }
 
-  const json = await res.json() as { channel: string; messages: TelegramFeedMessage[] };
+  const url = '/api/telegram-proxy?channel=' + channel;
+  console.log('[Signals] fetching', url);
 
-  const result: TelegramFeedResult = {
-    channel: json.channel,
-    messages: json.messages ?? [],
-    fetchedAt: Date.now(),
-  };
+  const res = await fetch(url);
+  console.log('[Signals] response', res.status, res.statusText, 'content-type:', res.headers.get('content-type'));
 
-  cache.set(channel, result);
-  return result;
+  // Read as text first so we can log the raw body on any parse failure.
+  // res.json() in Safari routes through a WebKit XML parser internally and can
+  // throw "The string did not match the expected pattern" on non-JSON bodies.
+  const text = await res.text();
+  console.log('[Signals] raw body (first 500):', text.slice(0, 500));
+
+  if (!res.ok) {
+    throw new Error(`telegram-proxy ${res.status} for ${channel}: ${text.slice(0, 200)}`);
+  }
+
+  let data: { channel: string; messages: TelegramFeedMessage[] };
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    console.error('[Signals] JSON.parse failed:', e);
+    throw new Error(`Response is not JSON for ${channel}. Body starts: ${text.slice(0, 100)}`);
+  }
+
+  console.log('[Signals] parsed', data.messages?.length ?? 0, 'messages for', channel);
+
+  const messages: TelegramFeedMessage[] = data.messages ?? [];
+  cache.set(channel, { messages, fetchedAt: Date.now() });
+  return messages;
 }
 
 export function invalidateChannel(channel: string): void {

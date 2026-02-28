@@ -524,6 +524,108 @@ const RSS_PROXY_ALLOWED_DOMAINS = new Set([
   'www.sciencedaily.com', 'feeds.nature.com', 'www.livescience.com', 'www.newscientist.com',
 ]);
 
+const TELEGRAM_ALLOWED_CHANNELS = new Set([
+  'goreunit', 'MeghUpdates', 'Middle_East_Spectator', 'wfwitness',
+]);
+
+function telegramProxyPlugin(): Plugin {
+  return {
+    name: 'telegram-proxy',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (!req.url?.startsWith('/api/telegram-proxy')) return next();
+
+        const url = new URL(req.url, 'http://localhost');
+        const channel = (url.searchParams.get('channel') ?? '').trim();
+
+        const jsonError = (status: number, msg: string) => {
+          res.statusCode = status;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: msg }));
+        };
+
+        if (!channel || !TELEGRAM_ALLOWED_CHANNELS.has(channel)) {
+          return jsonError(400, 'Channel not in allowlist');
+        }
+
+        const rssUrl = `https://rsshub.app/telegram/channel/${encodeURIComponent(channel)}`;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+
+        try {
+          const upstream = await fetch(rssUrl, {
+            signal: controller.signal,
+            headers: {
+              Accept: 'application/rss+xml, application/xml, text/xml, */*',
+              'Accept-Charset': 'utf-8',
+              'User-Agent': 'RUDRAASIntelCommand/2.0 (RSS reader)',
+            },
+          });
+          clearTimeout(timer);
+
+          if (!upstream.ok) return jsonError(502, `RSSHub returned ${upstream.status}`);
+
+          const xml = new TextDecoder('utf-8').decode(await upstream.arrayBuffer());
+
+          // ── inline RSS→JSON parse (mirrors api/telegram-proxy.ts) ──────────
+          const stripHtml = (raw: string) => raw
+            .replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '')
+            .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
+            .replace(/\n{3,}/g, '\n\n').trim();
+
+          const xmlField = (block: string, tag: string) => {
+            const cdata = block.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, 'i'));
+            if (cdata) return cdata[1].trim();
+            const plain = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+            return plain ? plain[1].trim() : '';
+          };
+
+          const processField = (raw: string) => {
+            const divIdx = raw.indexOf('<div class="');
+            const clipped = divIdx !== -1 ? raw.slice(0, divIdx) : raw;
+            let s = stripHtml(clipped);
+            s = s.replace(/&#(\d+);/g, (_, n) => { try { return String.fromCodePoint(parseInt(n, 10)); } catch { return ''; } });
+            s = s.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => { try { return String.fromCodePoint(parseInt(h, 16)); } catch { return ''; } });
+            s = s.replace(/(\s*\p{Emoji_Presentation}\uFE0F?\d[\d.,]*[KkMm]?\s*)+$/u, '');
+            const seen = new Set<string>();
+            s = s.replace(/https?:\/\/\S+/g, (u) => { if (seen.has(u)) return ''; seen.add(u); return u; });
+            s = s.trim();
+            if (s.length > 300) s = s.slice(0, 300) + '...';
+            return s;
+          };
+
+          const toIso = (pd: string) => { try { const d = new Date(pd); return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString(); } catch { return new Date().toISOString(); } };
+
+          const messages: { text: string; date: string; link: string }[] = [];
+          const items = xml.split(/<item[\s>]/i);
+          for (let i = 1; i < items.length; i++) {
+            const block = items[i];
+            const link = xmlField(block, 'link').trim();
+            if (!link) continue;
+            const title = processField(xmlField(block, 'title'));
+            const desc  = processField(xmlField(block, 'description'));
+            let text = desc.length > title.length ? desc : title;
+            if (!text) continue;
+            messages.push({ text, date: toIso(xmlField(block, 'pubDate')), link });
+          }
+
+          const payload = JSON.stringify({ channel, messages: messages.slice(-20) });
+          res.statusCode = 200;
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Cache-Control', 'no-store');
+          res.end(payload);
+        } catch (err: any) {
+          clearTimeout(timer);
+          console.error('[telegram-proxy]', channel, err.message);
+          const isAbort = err.name === 'AbortError';
+          jsonError(isAbort ? 504 : 502, isAbort ? 'Request timed out' : 'Fetch failed');
+        }
+      });
+    },
+  };
+}
+
 function rssProxyPlugin(): Plugin {
   return {
     name: 'rss-proxy',
@@ -655,6 +757,7 @@ export default defineConfig({
   plugins: [
     htmlVariantPlugin(),
     polymarketPlugin(),
+    telegramProxyPlugin(),
     rssProxyPlugin(),
     youtubeLivePlugin(),
     sebufApiPlugin(),

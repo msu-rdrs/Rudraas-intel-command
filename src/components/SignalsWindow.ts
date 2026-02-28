@@ -168,16 +168,18 @@ export class SignalsWindow {
     if (!feedEl) return;
 
     try {
-      const result = await fetchChannelMessages(ch.handle);
+      const messages = await fetchChannelMessages(ch.handle);
       this.loaded.add(idx);
 
       if (!this.overlay) return; // closed while fetching
 
-      this.renderMessages(feedEl, result.messages, ch.handle);
-    } catch {
+      this.renderMessages(feedEl, messages, ch.handle);
+    } catch (err) {
+      console.error(`[Signals] fetchAndRender failed for channel idx=${idx} (${ch.handle}):`, err);
       if (!this.overlay) return;
       if (!this.loaded.has(idx)) {
-        feedEl.innerHTML = `<div class="signals-error">⚠ FEED UNAVAILABLE — RETRY IN ${Math.round(POLL_INTERVAL / 1000)}s</div>`;
+        const msg = err instanceof Error ? err.message : String(err);
+        feedEl.innerHTML = `<div class="signals-error">⚠ FEED UNAVAILABLE — RETRY IN ${Math.round(POLL_INTERVAL / 1000)}s<br><small style="opacity:.5;font-size:9px">${escapeHtml(msg)}</small></div>`;
       }
       // If we already had content, keep it (don't wipe on transient error)
     }
