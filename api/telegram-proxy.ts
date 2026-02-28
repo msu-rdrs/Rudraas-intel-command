@@ -73,12 +73,16 @@ function cleanText(s: string): string {
 
 /**
  * Full pipeline for RSS description/title fields:
- *  - Cut at any trailing HTML fragment before stripping
- *  - Strip HTML → clean → truncate
+ *  0. Strip any CDATA wrappers (defense-in-depth — xmlField may miss them if
+ *     whitespace sits between the tag and <![CDATA[)
+ *  1. Cut at any trailing HTML fragment before stripping
+ *  2. Strip HTML → clean → truncate
  */
 function processField(raw: string): string {
-  const divIdx = raw.indexOf('<div class="');
-  const clipped = divIdx !== -1 ? raw.slice(0, divIdx) : raw;
+  // 0. Unwrap CDATA: <![CDATA[...]]> → inner content
+  const noCdata = raw.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
+  const divIdx = noCdata.indexOf('<div class="');
+  const clipped = divIdx !== -1 ? noCdata.slice(0, divIdx) : noCdata;
   return cleanText(stripHtml(clipped));
 }
 
@@ -107,8 +111,13 @@ function xmlField(block: string, tag: string): string {
 function parseRss(xml: string, channel: string): TelegramProxyMessage[] {
   const results: TelegramProxyMessage[] = [];
 
+  // Strip all CDATA wrappers globally before any field extraction.
+  // This handles feeds (e.g. tg.i-c-a.su) where whitespace between the
+  // opening tag and <![CDATA[ defeats the per-tag CDATA regex in xmlField().
+  const cleanXml = xml.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
+
   // Split on <item> boundaries; index 0 is channel header, skip it
-  const items = xml.split(/<item[\s>]/i);
+  const items = cleanXml.split(/<item[\s>]/i);
 
   for (let i = 1; i < items.length; i++) {
     const block = items[i];
