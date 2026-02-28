@@ -217,13 +217,21 @@ if (urlParams.get('settings') === '1') {
     }
   );
 } else {
-  const app = new App('app');
-  app
-    .init()
-    .then(() => {
-      clearChunkReloadGuard(chunkReloadStorageKey);
-    })
-    .catch(console.error);
+  async function bootApp() {
+    // Feature 2: Auth gate — blocks until authenticated
+    const { showAuthGate } = await import('./auth');
+    await showAuthGate();
+
+    // Feature 1: Splash screen — runs in parallel with app init
+    const { showSplash } = await import('./splash');
+    showSplash(); // intentionally not awaited — overlay removed by its own timer
+
+    // Initialize the main app while splash is visible
+    const app = new App('app');
+    await app.init();
+    clearChunkReloadGuard(chunkReloadStorageKey);
+  }
+  bootApp().catch(console.error);
 }
 
 // Debug helpers for geo-convergence testing (remove in production)

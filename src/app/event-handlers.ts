@@ -44,6 +44,7 @@ import { invokeTauri } from '@/services/tauri-bridge';
 import { dataFreshness } from '@/services/data-freshness';
 import { mlWorker } from '@/services/ml-worker';
 import { UnifiedSettings } from '@/components/UnifiedSettings';
+import { SignalsWindow } from '@/components/SignalsWindow';
 import { t } from '@/services/i18n';
 import { TvModeController } from '@/services/tv-mode';
 
@@ -488,6 +489,14 @@ export class EventHandlerManager implements AppModule {
     const mount = document.getElementById('unifiedSettingsMount');
     if (mount) {
       mount.appendChild(this.ctx.unifiedSettings.getButton());
+    }
+  }
+
+  setupSignalsWindow(): void {
+    const signalsWin = new SignalsWindow();
+    const mount = document.getElementById('signalsMount');
+    if (mount) {
+      mount.appendChild(signalsWin.getButton());
     }
   }
 
