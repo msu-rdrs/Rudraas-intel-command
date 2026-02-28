@@ -48,6 +48,55 @@ function stripHtml(raw: string): string {
     .trim();
 }
 
+/**
+ * Post-HTML-strip cleaning:
+ *  1. Decode numeric HTML entities  &#33; → !
+ *  2. Remove trailing reaction counts  🔥103👍10
+ *  3. Remove duplicate URLs
+ *  4. Trim + truncate to 300 chars
+ */
+function cleanText(s: string): string {
+  // 1. Decode decimal and hex numeric entities (e.g. &#33; &#x21;)
+  s = s.replace(/&#(\d+);/g, (_, n) => {
+    try { return String.fromCodePoint(parseInt(n, 10)); } catch { return ''; }
+  });
+  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_, h) => {
+    try { return String.fromCodePoint(parseInt(h, 16)); } catch { return ''; }
+  });
+
+  // 2. Strip trailing reaction counts: one or more (emoji + number) groups at end
+  //    e.g. "🔥103👍10" or "👁7.7K🔥45" — always at end, never mid-sentence
+  s = s.replace(/(\s*\p{Emoji_Presentation}\uFE0F?\d[\d.,]*[KkMm]?\s*)+$/u, '');
+
+  // 3. Remove duplicate URLs (same URL appearing more than once)
+  const seen = new Set<string>();
+  s = s.replace(/https?:\/\/\S+/g, (url) => {
+    if (seen.has(url)) return '';
+    seen.add(url);
+    return url;
+  });
+
+  // 4. Trim and truncate
+  s = s.trim();
+  if (s.length > 300) s = s.slice(0, 300) + '...';
+
+  return s;
+}
+
+/**
+ * Full pipeline for RSS description/title fields:
+ *  - Cut at any trailing HTML fragment before stripping
+ *  - Strip HTML
+ *  - Clean and truncate
+ */
+function processField(raw: string): string {
+  // Cut everything from the first <div class=" onward (trailing HTML fragments
+  // that weren't closed, e.g. leftover footer markup from RSSHub output)
+  const divIdx = raw.indexOf('<div class="');
+  const clipped = divIdx !== -1 ? raw.slice(0, divIdx) : raw;
+  return cleanText(stripHtml(clipped));
+}
+
 /** Convert RSS pubDate (RFC 2822) to ISO 8601. */
 function toIso(pubDate: string): string {
   if (!pubDate) return new Date().toISOString();
@@ -72,15 +121,14 @@ function parseRss(xml: string): TelegramProxyMessage[] {
 
     const link    = xmlField(block, 'link').trim();
     const pubDate = xmlField(block, 'pubDate');
-    const title   = stripHtml(xmlField(block, 'title'));
-    const desc    = stripHtml(xmlField(block, 'description'));
+    const title   = processField(xmlField(block, 'title'));
+    const desc    = processField(xmlField(block, 'description'));
 
     if (!link) continue;
 
     // Prefer description (full content) over title (may be truncated)
     let text = desc.length > title.length ? desc : title;
     if (!text) continue;
-    if (text.length > 800) text = text.slice(0, 800) + '…';
 
     results.push({ text, date: toIso(pubDate), link });
   }
@@ -139,6 +187,7 @@ export default async function handler(req: Request): Promise<Response> {
       {
         headers: {
           Accept: 'application/rss+xml, application/xml, text/xml, */*',
+          'Accept-Charset': 'utf-8',
           'User-Agent': 'RUDRAASIntelCommand/2.0 (RSS reader)',
         },
       },
@@ -152,7 +201,9 @@ export default async function handler(req: Request): Promise<Response> {
       );
     }
 
-    const xml      = await res.text();
+    // Force UTF-8 decoding — res.text() uses the Content-Type charset which
+    // may be absent or wrong, causing emoji to come out as e.g. ðŸ"¥ instead of 🔥
+    const xml = new TextDecoder('utf-8').decode(await res.arrayBuffer());
     const messages = parseRss(xml);
 
     return new Response(JSON.stringify({ channel, messages }), {
