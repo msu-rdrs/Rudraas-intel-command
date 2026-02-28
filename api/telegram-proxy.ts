@@ -1,10 +1,18 @@
 // Telegram channel proxy — parses RSSHub RSS feeds for public channels.
 // No bot token or JS rendering required.
-// RSSHub endpoint: https://rsshub.app/telegram/channel/{channel}
+// Tries multiple RSSHub mirrors in order until one responds with valid XML.
 
 import { getCorsHeaders, isDisallowedOrigin } from './_cors.js';
 
 export const config = { runtime: 'edge' };
+
+const RSSHUB_MIRRORS = [
+  'https://rsshub.app',
+  'https://rsshub.rssforever.com',
+  'https://hub.slarker.me',
+  'https://rsshub.feeded.xyz',
+  'https://rsshub.woodland.cafe',
+];
 
 const ALLOWED_CHANNELS = new Set([
   'goreunit',
@@ -179,49 +187,54 @@ export default async function handler(req: Request): Promise<Response> {
     });
   }
 
-  const rssUrl = `https://rsshub.app/telegram/channel/${encodeURIComponent(channel)}`;
+  const requestHeaders = {
+    Accept: 'application/rss+xml, application/xml, text/xml, */*',
+    'Accept-Charset': 'utf-8',
+    'User-Agent': 'RUDRAASIntelCommand/2.0 (RSS reader)',
+  };
 
-  try {
-    const res = await fetchWithTimeout(
-      rssUrl,
-      {
+  const encodedChannel = encodeURIComponent(channel);
+  let lastError = 'All RSSHub mirrors unavailable';
+
+  for (const mirror of RSSHUB_MIRRORS) {
+    const rssUrl = `${mirror}/telegram/channel/${encodedChannel}`;
+    try {
+      const res = await fetchWithTimeout(rssUrl, { headers: requestHeaders }, 5_000);
+
+      if (!res.ok) {
+        lastError = `${mirror} returned ${res.status}`;
+        continue;
+      }
+
+      // Force UTF-8 decoding — res.text() uses the Content-Type charset which
+      // may be absent or wrong, causing emoji to come out as e.g. ðŸ"¥ instead of 🔥
+      const xml = new TextDecoder('utf-8').decode(await res.arrayBuffer());
+
+      // Validate the response actually contains RSS items before accepting it
+      if (!xml.includes('<item')) {
+        lastError = `${mirror} returned no <item> tags`;
+        continue;
+      }
+
+      const messages = parseRss(xml);
+
+      return new Response(JSON.stringify({ channel, messages }), {
+        status: 200,
         headers: {
-          Accept: 'application/rss+xml, application/xml, text/xml, */*',
-          'Accept-Charset': 'utf-8',
-          'User-Agent': 'RUDRAASIntelCommand/2.0 (RSS reader)',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
+          ...cors,
         },
-      },
-      15_000,
-    );
-
-    if (!res.ok) {
-      return new Response(
-        JSON.stringify({ error: `RSSHub returned ${res.status}` }),
-        { status: 502, headers: { 'Content-Type': 'application/json', ...cors } },
-      );
+      });
+    } catch (err) {
+      const isAbort = err instanceof Error && err.name === 'AbortError';
+      lastError = isAbort ? `${mirror} timed out` : `${mirror} fetch failed`;
+      // continue to next mirror
     }
-
-    // Force UTF-8 decoding — res.text() uses the Content-Type charset which
-    // may be absent or wrong, causing emoji to come out as e.g. ðŸ"¥ instead of 🔥
-    const xml = new TextDecoder('utf-8').decode(await res.arrayBuffer());
-    const messages = parseRss(xml);
-
-    return new Response(JSON.stringify({ channel, messages }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=30, stale-while-revalidate=60',
-        ...cors,
-      },
-    });
-  } catch (err) {
-    const isAbort = err instanceof Error && err.name === 'AbortError';
-    return new Response(
-      JSON.stringify({ error: isAbort ? 'Request timed out' : 'Fetch failed' }),
-      {
-        status: isAbort ? 504 : 502,
-        headers: { 'Content-Type': 'application/json', ...cors },
-      },
-    );
   }
+
+  return new Response(
+    JSON.stringify({ error: lastError }),
+    { status: 502, headers: { 'Content-Type': 'application/json', ...cors } },
+  );
 }
