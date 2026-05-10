@@ -113,7 +113,7 @@ export const OPTIONAL_LIVE_CHANNELS: LiveChannel[] = [
   { id: 'ann-news', name: 'ANN News', handle: '@ANNnewsCH' },
   { id: 'ntv-news', name: 'NTV News (Japan)', handle: '@ntv_news' },
   { id: 'cti-news', name: 'CTI News (Taiwan)', handle: '@中天新聞CtiNews', fallbackVideoId: 'wUPPkSANpyo', useFallbackOnly: true },
-  { id: 'wion', name: 'WION', handle: '@WION' },
+  { id: 'wion', name: 'WION', handle: '@WION', fallbackVideoId: 'vfszY1JYbMc' },
   { id: 'vtc-now', name: 'VTC NOW', handle: '@VTCNowOfficial' },
   { id: 'cna-asia', name: 'CNA (NewsAsia)', handle: '@channelnewsasia', fallbackVideoId: 'XWq5kBlakcQ' },
   { id: 'nhk-world', name: 'NHK World Japan', handle: '@NHKWORLDJAPAN' },

@@ -351,8 +351,8 @@ describe('sidecar youtube-embed endpoint', () => {
 // ── 10. Optional channels with fallbackVideoId ──
 
 describe('optional channels fallback coverage', () => {
-  // livenow-fox, abc-news, wion are pending fallbackVideoId lookups
-  const highPriorityOptional = ['nbc-news'];
+  // livenow-fox, abc-news are pending fallbackVideoId lookups
+  const highPriorityOptional = ['nbc-news', 'wion'];
 
   for (const id of highPriorityOptional) {
     it(`${id} has fallbackVideoId`, () => {
