@@ -218,9 +218,7 @@ if (urlParams.get('settings') === '1') {
   );
 } else {
   async function bootApp() {
-    // Feature 2: Auth gate — blocks until authenticated
-    const { showAuthGate } = await import('./auth');
-    await showAuthGate();
+    // Feature 2: Auth gate — temporarily disabled (was: showAuthGate from './auth')
 
     // Feature 1: Splash screen — runs in parallel with app init
     const { showSplash } = await import('./splash');

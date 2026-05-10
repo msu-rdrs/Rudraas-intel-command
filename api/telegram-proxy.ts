@@ -102,13 +102,13 @@ function toIso(pubDate: string): string {
 /** Extract the inner content of a single XML tag (handles CDATA). */
 function xmlField(block: string, tag: string): string {
   const cdata = block.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>`, 'i'));
-  if (cdata) return cdata[1].trim();
+  if (cdata && cdata[1] !== undefined) return cdata[1].trim();
   const plain = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
-  if (plain) return plain[1].trim();
+  if (plain && plain[1] !== undefined) return plain[1].trim();
   return '';
 }
 
-function parseRss(xml: string, channel: string): TelegramProxyMessage[] {
+function parseRss(xml: string): TelegramProxyMessage[] {
   const results: TelegramProxyMessage[] = [];
 
   // Strip all CDATA wrappers globally before any field extraction.
@@ -121,6 +121,7 @@ function parseRss(xml: string, channel: string): TelegramProxyMessage[] {
 
   for (let i = 1; i < items.length; i++) {
     const block = items[i];
+    if (block === undefined) continue;
 
     const rawLink = xmlField(block, 'link').trim();
     // Some feeds put the link as plain text between tags; try guid as fallback
@@ -144,7 +145,7 @@ function parseRss(xml: string, channel: string): TelegramProxyMessage[] {
 
 // ── HTML parser (approach 3 — t.me/s/ scraping) ───────────────────────────────
 
-function parseTmeSPage(html: string, channel: string): TelegramProxyMessage[] {
+function parseTmeSPage(html: string): TelegramProxyMessage[] {
   const results: TelegramProxyMessage[] = [];
 
   // Split on data-post= boundaries — each block is one message widget
@@ -152,16 +153,19 @@ function parseTmeSPage(html: string, channel: string): TelegramProxyMessage[] {
 
   for (let i = 1; i < blocks.length; i++) {
     const block = blocks[i];
+    if (block === undefined) continue;
 
     // data-post="channel/123" — extract the post ID to build the permalink
     const postMatch = block.match(/^["']([^"']+)["']/);
-    if (!postMatch) continue;
+    if (!postMatch || postMatch[1] === undefined) continue;
     const postPath = postMatch[1]; // e.g. "MeghUpdates/1234"
     const link = `https://t.me/${postPath}`;
 
     // Date: <time datetime="2024-01-14T09:35:00+00:00"
     const dateMatch = block.match(/<time[^>]+datetime=["']([^"']+)["']/i);
-    const date = dateMatch ? toIso(dateMatch[1]) : new Date().toISOString();
+    const date = dateMatch && dateMatch[1] !== undefined
+      ? toIso(dateMatch[1])
+      : new Date().toISOString();
 
     // Message text: find tgme_widget_message_text block
     // Use indexOf to avoid the nested-div regex trap
@@ -248,7 +252,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (res.ok) {
       const xml = new TextDecoder('utf-8').decode(await res.arrayBuffer());
       if (xml.includes('<item')) {
-        const messages = parseRss(xml, channel);
+        const messages = parseRss(xml);
         return new Response(JSON.stringify({ channel, messages }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=30, stale-while-revalidate=60', ...cors },
@@ -269,7 +273,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (res.ok) {
       const xml = new TextDecoder('utf-8').decode(await res.arrayBuffer());
       if (xml.includes('<item')) {
-        const messages = parseRss(xml, channel);
+        const messages = parseRss(xml);
         return new Response(JSON.stringify({ channel, messages }), {
           status: 200,
           headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=30, stale-while-revalidate=60', ...cors },
@@ -296,7 +300,7 @@ export default async function handler(req: Request): Promise<Response> {
     );
     if (res.ok) {
       const html = new TextDecoder('utf-8').decode(await res.arrayBuffer());
-      const messages = parseTmeSPage(html, channel);
+      const messages = parseTmeSPage(html);
       if (messages.length > 0) {
         return new Response(JSON.stringify({ channel, messages }), {
           status: 200,
